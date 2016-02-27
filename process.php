@@ -103,9 +103,9 @@ $json_stream = '';
 $state = array();
 
 /* iterate through compressed log file */
-while (!feof($f) && bzerror($f) ) {
+while (!feof($f) && (bzerrno($f)==0) ) {
 
-    if(($buf = bzread($f, 8192)) === FALSE)
+    if(!($buf = bzread($f, 8192)))
         break;
     $json_stream .= $buf;
 
