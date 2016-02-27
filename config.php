@@ -1,7 +1,7 @@
 <?php
 
 define('FILE_NAME', 'ward.log.bz2');
-define('TAG_TIMEOUT', 10);
+define('TAG_TIMEOUT', 30);
 define('TIMEZONE', 'GMT');
 
 $list_names = array(
