@@ -36,7 +36,7 @@ function tag_log_entry($tag)
 
 function tag_check_states($time)
 {
-    global $state;
+    global $state, $list_names;
 
     foreach($state as $id => $prev_state)
     {
@@ -97,6 +97,65 @@ function tag_changed_state($tag)
     return true;
 }
 
+function tag_add_sighting($tag_a, $tag_b, $power)
+{
+    global $sighting, $list_names;
+
+    /* ignore weak sightings */
+    if($power < -85)
+        return;
+
+    /* optionally resolve primary tag name */
+    if(isset($list_names[$tag_a]))
+        $tag_a = $list_names[$tag_a];
+    /* ignore certain primary tag classes */
+    if(($pos = strpos($tag_a,'-'))!==FALSE)
+        switch(strtolower(substr($tag_a, 0, $pos)))
+        {
+            case 'bed'   :
+            case 'nurse' :
+                break;
+            default      :
+                return;
+        }
+
+    /* only measure relations to known tags */
+    if(!isset($list_names[$tag_b]))
+        return;
+    $tag_b = $list_names[$tag_b];
+
+    /* check for tag class - replace if needed */
+    if(($pos = strpos($tag_b,'-'))!==FALSE)
+    {
+        $class = substr($tag_b, 0, $pos);
+        if(isset($sighting[$tag_a][$class]))
+        {
+            /* check if power is higher within class */
+            $log = $sighting[$tag_a][$class];
+            if($power > $log->power)
+            {
+                $log->name = $tag_b;
+                $log->power = $power;
+            }
+        }
+        else
+        {
+            $log = new stdClass();
+            $log->name = $tag_b;
+            $log->power = $power;
+            /* remember sighting the first time */
+            $sighting[$tag_a][$class] = $log;
+        }
+    }
+    else
+        /* log class-less sighting */
+        if(!isset($sighting[$tag_a][$tag_b]))
+            $sighting[$tag_a][$tag_b] = $power;
+        else
+            if($sighting[$tag_a][$tag_b] < $power)
+                $sighting[$tag_a][$tag_b] = $power;
+}
+
 /* open log file */
 $f = bzopen(FILE_NAME, 'r') or die('Couldn\'t open '.FILE_NAME);
 $json_stream = '';
@@ -151,6 +210,30 @@ while (!feof($f) && (bzerrno($f)==0) ) {
                 /* log tag */
                 tag_log_entry($log);
             }
+
+            /* process all tag sightings */
+            $sighting = array();
+            foreach($obj->edge as $edge)
+            {
+                $tag_a = $edge->tag[0];
+                $tag_b = $edge->tag[1];
+
+                tag_add_sighting($tag_a, $tag_b, $edge->power);
+                tag_add_sighting($tag_b, $tag_a, $edge->power);
+            }
+
+            /* sort sightings */
+            ksort($sighting);
+            foreach($sighting as &$s)
+                ksort($s);
+
+            /* simplify sightings */
+            $list = array();
+            foreach($sighting as $tag_id => $s)
+                foreach($s as $name => $content)
+                    $list[$tag_id][] = is_object($content) ? $content->name : $name;
+            ksort($list);
+//            echo json_encode($list).PHP_EOL;
         }
     }
 }
