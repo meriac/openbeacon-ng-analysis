@@ -109,15 +109,14 @@ function tag_add_sighting($tag_a, $tag_b, $power)
     if(isset($list_names[$tag_a]))
         $tag_a = $list_names[$tag_a];
     /* ignore certain primary tag classes */
-    if(($pos = strpos($tag_a,'-'))!==FALSE)
-        switch(strtolower(substr($tag_a, 0, $pos)))
-        {
-            case 'bed'   :
-            case 'nurse' :
-                break;
-            default      :
-                return;
-        }
+    if(($pos = strpos($tag_a,'-'))==FALSE)
+    {
+        if(intval($tag_a)>0)
+            return;
+    }
+    else
+        if(strtolower(substr($tag_a, 0, $pos)) != 'nurse')
+            return;
 
     /* only measure relations to known tags */
     if(!isset($list_names[$tag_b]))
@@ -160,6 +159,7 @@ function tag_add_sighting($tag_a, $tag_b, $power)
 $f = bzopen(FILE_NAME, 'r') or die('Couldn\'t open '.FILE_NAME);
 $json_stream = '';
 $state = array();
+$list_prev = array();
 
 /* iterate through compressed log file */
 while (!feof($f) && (bzerrno($f)==0) ) {
@@ -233,7 +233,26 @@ while (!feof($f) && (bzerrno($f)==0) ) {
                 foreach($s as $name => $content)
                     $list[$tag_id][] = is_object($content) ? $content->name : $name;
             ksort($list);
-//            echo json_encode($list).PHP_EOL;
+
+            /* only get changes from previous run */
+            $res = array();
+            foreach($list as $tag_id => $s)
+                if(!(isset($list_prev[$tag_id]) && ($list_prev[$tag_id]==$s)))
+                    $res[$tag_id] = $s;
+            foreach($list_prev as $tag_id => $s)
+                if(!isset($list[$tag_id]))
+                    $res[$tag_id] = array();
+            /* remember previos list */
+            $list_prev = $list;
+
+            /* ignore empty lists */
+            if(count($res))
+            {
+                $log = new stdClass();
+                $log->time = $time;
+                $log->sighting = $res;
+                tag_log_entry($log);
+            }
         }
     }
 }
