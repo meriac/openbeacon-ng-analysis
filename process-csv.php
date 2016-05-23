@@ -31,7 +31,7 @@ function tag_log_entry($tag)
 {
     $log = clone $tag;
     $log->time = strftime(TIME_FORMAT, $log->time);
-//    echo json_encode($log).PHP_EOL;
+    echo json_encode($log).PHP_EOL;
 }
 
 function tag_check_states($time)
@@ -240,7 +240,6 @@ while (!feof($f) && (bzerrno($f)==0) ) {
                         unset($sighting_power[$tag_a][$tag_b]);
                         if(isset($sighting_avg[$tag_a][$tag_b]))
                             unset($sighting_avg[$tag_a][$tag_b]);
-                        echo "expire $time: $tag_a -> $tag_b\n";
                     }
             }
  
@@ -251,7 +250,9 @@ while (!feof($f) && (bzerrno($f)==0) ) {
 
                 $log = new stdClass();
                 if(isset($list_names[$tag_id]))
-                    $log->name = $list_names[$tag_id];
+                    $log->id = $list_names[$tag_id];
+                else
+                    $log->id = $tag_id;
 
                 switch($tag_id)
                 {
@@ -262,12 +263,15 @@ while (!feof($f) && (bzerrno($f)==0) ) {
                 }
 
                 /* common log entries */
-                $log->id = $tag_id;
                 $log->time = $time;
 
                 /* ignore unmodified log entry */
                 if(!tag_changed_state($log))
                     continue;
+
+                /* log angle */
+                if(isset($log->angle))
+                    log_file($time, $log->id, 'Angle', $log->angle);
 
                 /* log tag */
                 tag_log_entry($log);
