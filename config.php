@@ -23,9 +23,12 @@
  along with OpenBeacon.  If not, see <http://www.gnu.org/licenses/>.
 
 */
-define('FILE_NAME', 'ward.log.bz2');
+define('FILE_NAME', 'Logfiles/ward.log.bz2');
+define('TAG_LOW_PASS', 10);
 define('TAG_TIMEOUT', 30);
+define('TAG_MIN_SIGHTINGS', 5);
 define('TIMEZONE', 'GMT');
+define('TIME_FORMAT', '%d.%m.%y %H:%M:%S');
 
 $list_names = array(
     /* nurses */
