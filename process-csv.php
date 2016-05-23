@@ -151,7 +151,7 @@ function tag_add_sighting($time, $tag_a, $tag_b, $power)
     }
 }
 
-function log_file($time, $src, $dest, $power, $message = FALSE)
+function log_file($time, $src, $dest, $message = FALSE)
 {
     if(($pos = strpos($dest,'-'))==FALSE)
         $class = $dest;
@@ -162,7 +162,7 @@ function log_file($time, $src, $dest, $power, $message = FALSE)
     if($message)
         $message = ','.$message;
 
-    file_put_contents("Sighting-$src-$class.csv",strftime(TIME_FORMAT,$time).",$dest,$power$message\n",FILE_APPEND);
+    file_put_contents("Sighting-$src-$class.csv",strftime(TIME_FORMAT,$time).",$dest$message\n",FILE_APPEND);
 }
 
 function log_sighting($time, $tagid, $log)
@@ -174,10 +174,9 @@ function log_sighting($time, $tagid, $log)
         if(!isset($state_prox[$tagid][$id]))
         {
             $state_prox_start[$tagid][$id] = $time;
-            log_file($time, $tagid, $id, $power, 'start');
+            log_file($time, $tagid, $id, 'start');
         }
-        else
-            log_file($time, $tagid, $id, $power);
+
         $state_prox[$tagid][$id] = $time;
     }
 }
@@ -220,10 +219,14 @@ while (!feof($f) && (bzerrno($f)==0) ) {
                 foreach($tag_list as $id => $time_prev)
                     if(($time-$time_prev)>TAG_TIMEOUT)
                     {
-                        $delta = $time-$state_prox_start[$tag_id][$id];
-                        log_file($time_prev+TAG_TIMEOUT, $tag_id, $id, '', 'stop,'.$delta);
-                        unset($state_prox[$tag_id][$id]);
-                        unset($state_prox_start[$tag_id][$id]);
+                        if(isset($state_prox_start[$tag_id][$id]))
+                        {
+                            $delta = $time-$state_prox_start[$tag_id][$id];
+                            log_file($time_prev+TAG_TIMEOUT, $tag_id, $id, 'stop,'.$delta);
+                            unset($state_prox[$tag_id][$id]);
+                        }
+                        if(isset($state_prox_start[$tag_id][$id]))
+                            unset($state_prox_start[$tag_id][$id]);
                     }
             }
 

@@ -24,8 +24,8 @@
 
 */
 define('FILE_NAME', 'Logfiles/ward.log.bz2');
-define('TAG_LOW_PASS', 10);
-define('TAG_TIMEOUT', 30);
+define('TAG_LOW_PASS', 5);
+define('TAG_TIMEOUT', 10);
 define('TAG_MIN_SIGHTINGS', 5);
 define('TIMEZONE', 'GMT');
 define('TIME_FORMAT', '%d.%m.%y %H:%M:%S');
